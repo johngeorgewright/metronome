@@ -9,11 +9,11 @@ export interface MetronomeOptions {
 }
 
 export interface MetronomeEvents {
+  beat: number
   'bar.complete': void
   'bar.start': void
   start: void
   stop: void
-  tick: number
 }
 
 export default interface Metronome {
@@ -70,7 +70,7 @@ export default class Metronome extends EventEmitter {
       this.emit('bar.start')
     }
 
-    this.emit('tick', beat)
+    this.emit('beat', beat)
 
     if (beat === maxBeat) {
       this.emit('bar.complete')

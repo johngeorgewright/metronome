@@ -3,7 +3,7 @@ import readLine from 'readline'
 
 const metronome = new Metronome({ bpm: 174, timeSignature: [4, 4] })
 
-metronome.on('tick', beat => {
+metronome.on('beat', beat => {
   process.stdout.write(beat.toString())
 })
 
