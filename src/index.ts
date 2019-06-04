@@ -1,1 +1,1 @@
-export default () => "metronome";
+export default () => 'metronome'
