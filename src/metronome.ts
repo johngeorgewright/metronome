@@ -3,8 +3,6 @@ import { bpmToMs } from './bpm'
 
 export type TimeSignature = [number, number]
 
-export type BasicListener = () => void
-
 export interface MetronomeOptions {
   bpm: number
   timeSignature: TimeSignature
@@ -14,14 +12,21 @@ export interface MetronomeEvents {
   'bar.complete': void
   'bar.start': void
   start: void
+  stop: void
   tick: number
 }
 
-export interface MetronomeEventEmitter {
+export default interface Metronome {
   emit<EventName extends keyof MetronomeEvents>(
-    eventName: EventName,
-    param: MetronomeEvents[EventName]
+    ...args: MetronomeEvents[EventName] extends void
+      ? [EventName]
+      : [EventName, MetronomeEvents[EventName]]
   ): boolean
+
+  addEventListener<EventName extends keyof MetronomeEvents>(
+    eventName: EventName,
+    listener: (param: MetronomeEvents[EventName]) => void
+  ): this
 
   on<EventName extends keyof MetronomeEvents>(
     eventName: EventName,
@@ -32,10 +37,20 @@ export interface MetronomeEventEmitter {
     eventName: EventName,
     listener: (param: MetronomeEvents[EventName]) => void
   ): this
+
+  removeListener<EventName extends keyof MetronomeEvents>(
+    eventName: EventName,
+    listener: (param: MetronomeEvents[EventName]) => void
+  ): this
+
+  removeAllListeners<EventName extends keyof MetronomeEvents>(
+    eventName: EventName
+  ): this
+
+  eventNames<EventName extends keyof MetronomeEvents>(): EventName[]
 }
 
-export default class Metronome extends EventEmitter
-  implements MetronomeEventEmitter {
+export default class Metronome extends EventEmitter {
   private beat: number = 1
   private bpm: number
   private intervalId: NodeJS.Timeout | void = void 0
