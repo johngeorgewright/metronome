@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events'
+import StrictEventEmitter from './strict-event-emitter'
 import { bpmToMs } from './bpm'
 
 export enum Note {
@@ -26,7 +27,7 @@ export interface MetronomeOptions {
   timeSignature: TimeSignature
 }
 
-export interface MetronomeEvents {
+interface MetronomeEvents {
   beat: number
   'bar.complete': void
   'bar.start': void
@@ -34,49 +35,15 @@ export interface MetronomeEvents {
   stop: void
 }
 
-export default interface Metronome {
-  emit<EventName extends keyof MetronomeEvents>(
-    ...args: MetronomeEvents[EventName] extends void
-      ? [EventName]
-      : [EventName, MetronomeEvents[EventName]]
-  ): boolean
-
-  addEventListener<EventName extends keyof MetronomeEvents>(
-    eventName: EventName,
-    listener: (param: MetronomeEvents[EventName]) => void
-  ): this
-
-  on<EventName extends keyof MetronomeEvents>(
-    eventName: EventName,
-    listener: (param: MetronomeEvents[EventName]) => void
-  ): this
-
-  once<EventName extends keyof MetronomeEvents>(
-    eventName: EventName,
-    listener: (param: MetronomeEvents[EventName]) => void
-  ): this
-
-  removeListener<EventName extends keyof MetronomeEvents>(
-    eventName: EventName,
-    listener: (param: MetronomeEvents[EventName]) => void
-  ): this
-
-  removeAllListeners<EventName extends keyof MetronomeEvents>(
-    eventName: EventName
-  ): this
-
-  eventNames<EventName extends keyof MetronomeEvents>(): EventName[]
-}
-
-export default class Metronome extends EventEmitter {
+export default class Metronome {
   private beat: number = 1
   private bpm: number
+  private eventEmitter: StrictEventEmitter<MetronomeEvents> = new EventEmitter()
   private intervalId: NodeJS.Timeout | void = void 0
   private mark: Note
   private timeSignature: TimeSignature
 
   constructor({ bpm, mark = Note.Quarter, timeSignature }: MetronomeOptions) {
-    super()
     this.bpm = bpm
     this.mark = mark
     this.timeSignature = timeSignature
@@ -87,27 +54,27 @@ export default class Metronome extends EventEmitter {
     const beat = this.beat
 
     if (beat === 1) {
-      this.emit('bar.start')
+      this.eventEmitter.emit('bar.start')
     }
 
-    this.emit('beat', beat)
+    this.eventEmitter.emit('beat', beat)
 
     if (beat === maxBeat) {
-      this.emit('bar.complete')
+      this.eventEmitter.emit('bar.complete')
       this.beat = 1
     } else {
       this.beat++
     }
   }
 
-  private intervalInMS(): number {
+  private get intervalInMS(): number {
     let ms = bpmToMs(this.bpm)
 
     return this.timeSignature[1] === this.mark
       ? ms
       : this.timeSignature[1] > this.mark
-      ? ms / (this.timeSignature[1] - this.mark)
-      : ms * (this.mark - this.timeSignature[1])
+      ? ms / (this.timeSignature[1] / this.mark)
+      : ms * (this.mark / this.timeSignature[1])
   }
 
   get running() {
@@ -132,6 +99,37 @@ export default class Metronome extends EventEmitter {
     return this.timeSignature
   }
 
+  on<EventName extends keyof MetronomeEvents>(
+    eventName: EventName,
+    listener: (param: MetronomeEvents[EventName]) => void
+  ): this {
+    this.eventEmitter.on(eventName, listener)
+    return this
+  }
+
+  once<EventName extends keyof MetronomeEvents>(
+    eventName: EventName,
+    listener: (param: MetronomeEvents[EventName]) => void
+  ): this {
+    this.eventEmitter.once(eventName, listener)
+    return this
+  }
+
+  off<EventName extends keyof MetronomeEvents>(
+    eventName?: EventName,
+    listener?: (param: MetronomeEvents[EventName]) => void
+  ): this {
+    if (!eventName) {
+      this.eventEmitter.removeAllListeners()
+    } else if (!listener) {
+      this.eventEmitter.removeAllListeners(eventName)
+    } else {
+      this.eventEmitter.removeListener(eventName, listener)
+    }
+
+    return this
+  }
+
   restart() {
     if (this.running) {
       this.stop()
@@ -140,14 +138,14 @@ export default class Metronome extends EventEmitter {
   }
 
   start() {
-    this.emit('start')
+    this.eventEmitter.emit('start')
     this.tick()
-    this.intervalId = setInterval(this.tick, this.intervalInMS())
+    this.intervalId = setInterval(this.tick, this.intervalInMS)
   }
 
   stop() {
     if (this.intervalId) {
-      this.emit('stop')
+      this.eventEmitter.emit('stop')
       this.intervalId = clearInterval(this.intervalId)
     }
   }

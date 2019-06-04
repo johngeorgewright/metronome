@@ -1,21 +1,47 @@
 import { bpmToMs } from '../bpm'
-import Metronome from '../metronome'
-import { EventEmitter } from 'events'
+import Metronome, { TimeSignature, Note } from '../metronome'
 
 jest.useFakeTimers()
 
-test('Metronome', () => {
-  const metronome = new Metronome({ bpm: 80, timeSignature: [4, 4] })
-  const ms = bpmToMs(80)
-  expect(metronome).toBeInstanceOf(EventEmitter)
-
+const testMetronome = (
+  bpm: number,
+  timeSignature: TimeSignature,
+  ms: number,
+  mark?: Note
+) => {
   const spy = jest.fn()
-  metronome.on('tick', spy)
-  metronome.start()
+  const metronome = new Metronome({ bpm, mark, timeSignature })
 
-  expect(spy).not.toHaveBeenCalled()
-  jest.advanceTimersByTime(ms)
+  metronome.on('beat', spy)
+  metronome.start()
   expect(spy).toHaveBeenCalledTimes(1)
+  expect(spy).toHaveBeenLastCalledWith(1)
+
+  for (let i = 2; i <= timeSignature[0]; i++) {
+    jest.advanceTimersByTime(ms)
+    expect(spy).toHaveBeenCalledTimes(i)
+    expect(spy).toHaveBeenLastCalledWith(i)
+  }
+
   jest.advanceTimersByTime(ms)
-  expect(spy).toHaveBeenCalledTimes(2)
+  expect(spy).toHaveBeenCalledTimes(timeSignature[0] + 1)
+  expect(spy).toHaveBeenLastCalledWith(1)
+}
+
+describe('Metronome', () => {
+  test('80bpm 4/4 crochets', () => {
+    testMetronome(80, [4, 4], bpmToMs(80))
+  })
+
+  test('55bpm 6/8 crochets', () => {
+    testMetronome(55, [6, 8], bpmToMs(55) / 2, Note.Quarter)
+  })
+
+  test('55bpm 6/8 quavers', () => {
+    testMetronome(55, [6, 8], bpmToMs(55), Note.Eighth)
+  })
+
+  test('180bpm 6/8 minims', () => {
+    testMetronome(180, [6, 8], bpmToMs(180) / 4, Note.Minim)
+  })
 })
