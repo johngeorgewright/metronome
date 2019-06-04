@@ -57,6 +57,9 @@
       "^.+\\.ts$": "ts-jest"
     },
     "transformIgnorePatterns": [],
-    "testRegex": ".*/__tests__/.*\\.(test|spec)\\.ts$"
+    "testRegex": ".*/__tests__/.*\\.spec\\.ts$"
+  },
+  "dependencies": {
+    "peerjs": "^1.0.0"
   }
 }

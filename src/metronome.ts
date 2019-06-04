@@ -1,15 +1,68 @@
 import { EventEmitter } from 'events'
+import { bpmToMs } from './bpm'
 
-export const bpmToMs = (bpm: number): number => (60 * 1000) / bpm
+export type TimeSignature = [number, number]
 
-export default class Metronome extends EventEmitter {
+export type BasicListener = () => void
+
+export interface MetronomeOptions {
+  bpm: number
+  timeSignature: TimeSignature
+}
+
+export interface MetronomeEvents {
+  'bar.complete': void
+  'bar.start': void
+  start: void
+  tick: number
+}
+
+export interface MetronomeEventEmitter {
+  emit<EventName extends keyof MetronomeEvents>(
+    eventName: EventName,
+    param: MetronomeEvents[EventName]
+  ): boolean
+
+  on<EventName extends keyof MetronomeEvents>(
+    eventName: EventName,
+    listener: (param: MetronomeEvents[EventName]) => void
+  ): this
+
+  once<EventName extends keyof MetronomeEvents>(
+    eventName: EventName,
+    listener: (param: MetronomeEvents[EventName]) => void
+  ): this
+}
+
+export default class Metronome extends EventEmitter
+  implements MetronomeEventEmitter {
+  private beat: number = 1
   private bpm: number
-  private intervalId: NodeJS.Timeout | void
+  private intervalId: NodeJS.Timeout | void = void 0
+  private timeSignature: TimeSignature
 
-  constructor(bpm: number) {
+  constructor({ bpm, timeSignature }: MetronomeOptions) {
     super()
     this.bpm = bpm
-    this.intervalId = void 0
+    this.timeSignature = timeSignature
+  }
+
+  private readonly tick = () => {
+    const maxBeat = this.timeSignature[0]
+    const beat = this.beat
+
+    if (beat === 1) {
+      this.emit('bar.start')
+    }
+
+    this.emit('tick', beat)
+
+    if (beat === maxBeat) {
+      this.emit('bar.complete')
+      this.beat = 1
+    } else {
+      this.beat++
+    }
   }
 
   get running() {
@@ -31,14 +84,12 @@ export default class Metronome extends EventEmitter {
 
   start() {
     this.emit('start')
-    this.intervalId = setInterval(() => {
-      this.emit('tick')
-    }, bpmToMs(this.bpm))
+    this.intervalId = setInterval(this.tick, bpmToMs(this.bpm))
   }
 
   stop() {
-    this.emit('stop')
     if (this.intervalId) {
+      this.emit('stop')
       this.intervalId = clearInterval(this.intervalId)
     }
   }

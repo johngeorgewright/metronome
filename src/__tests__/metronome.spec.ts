@@ -1,15 +1,11 @@
-import Metronome, { bpmToMs } from '../metronome'
+import { bpmToMs } from '../bpm'
+import Metronome from '../metronome'
 import { EventEmitter } from 'events'
 
 jest.useFakeTimers()
 
-test('bpmToMs()', () => {
-  expect(bpmToMs(60)).toMatchInlineSnapshot(`1000`)
-  expect(bpmToMs(84)).toMatchInlineSnapshot(`714.2857142857143`)
-})
-
 test('Metronome', () => {
-  const metronome = new Metronome(80)
+  const metronome = new Metronome({ bpm: 80, timeSignature: [4, 4] })
   const ms = bpmToMs(80)
   expect(metronome).toBeInstanceOf(EventEmitter)
 
