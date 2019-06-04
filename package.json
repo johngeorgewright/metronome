@@ -1,0 +1,61 @@
+{
+  "name": "metronome",
+  "version": "0.0.0",
+  "description": "A peer to peer metronome",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rimraf dist",
+    "prebuild": "npm run clean",
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/johngeorgewright/metronome.git"
+  },
+  "keywords": [
+    "metronome",
+    "p2p",
+    "peer"
+  ],
+  "author": "John Wright",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/johngeorgewright/metronome/issues"
+  },
+  "homepage": "https://github.com/johngeorgewright/metronome#readme",
+  "devDependencies": {
+    "@types/jest": "^24.0.13",
+    "@types/node": "^12.0.4",
+    "husky": "^2.3.0",
+    "jest": "^24.8.0",
+    "lint-staged": "^8.1.7",
+    "prettier": "^1.17.1",
+    "rimraf": "^2.6.3",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.5.1"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
+  "lint-staged": {
+    "*.{md,json,yaml,js,jsx,ts,tsx}": [
+      "prettier --ignore-path .gitignore --write",
+      "git add"
+    ]
+  },
+  "jest": {
+    "moduleFileExtensions": [
+      "ts",
+      "js"
+    ],
+    "testEnvironment": "node",
+    "transform": {
+      "^.+\\.ts$": "ts-jest"
+    },
+    "transformIgnorePatterns": [],
+    "testRegex": ".*/__tests__/.*\\.(test|spec)\\.ts$"
+  }
+}
