@@ -1,5 +1,5 @@
-import metronome from "..";
+import metronome from '..'
 
-test("my first test", () => {
-  expect(metronome()).toBe("metronome");
-});
+test('my first test', () => {
+  expect(metronome()).toBe('metronome')
+})
