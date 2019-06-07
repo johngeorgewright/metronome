@@ -30,15 +30,21 @@ function createDetails() {
   }
 
   const sendChannel = conn.createDataChannel('sendChannel')
+
+  const sendBeat = (beat: number) =>
+    sendChannel.send(JSON.stringify({ message: 'beat', beat }))
+
   sendChannel.onopen = () => {
-    metronome.on('beat', beat =>
-      sendChannel.send(JSON.stringify({ message: 'beat', beat }))
-    )
+    metronome.on('beat', sendBeat)
   }
 
   sendChannel.onclose = () => {
-    console.log('closed!!')
+    metronome.off('beat')
   }
+
+  window.addEventListener('close', () => {
+    sendChannel.close()
+  })
 
   const connect = async () => {
     connectButton.removeEventListener('click', connect)
