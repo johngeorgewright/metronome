@@ -4,10 +4,57 @@ const metronome = new Metronome({ bpm: 74, timeSignature: [4, 4] })
 metronome.on('beat', console.log)
 metronome.start()
 
-const conn = new RTCPeerConnection()
-conn.ondatachannel = () => {
-  console.log('data')
+function createDetails() {
+  const connectButton = document.getElementById('go') as HTMLButtonElement
+  const clientDetails = document.getElementById('answer') as HTMLTextAreaElement
+
+  clientDetails.value = ''
+
+  const details: {
+    ice?: RTCIceCandidate
+    offer?: RTCSessionDescriptionInit
+  } = {}
+
+  const done = () => {
+    ;(document.getElementById(
+      'details'
+    ) as HTMLPreElement).innerHTML = JSON.stringify(details, null, 2)
+  }
+
+  const conn = new RTCPeerConnection()
+  conn.onicecandidate = event => {
+    if (event.candidate) {
+      details.ice = event.candidate
+      if (details.ice && details.offer) done()
+    }
+  }
+
+  const sendChannel = conn.createDataChannel('sendChannel')
+  sendChannel.onopen = () => {
+    metronome.on('beat', beat =>
+      sendChannel.send(JSON.stringify({ message: 'beat', beat }))
+    )
+  }
+
+  sendChannel.onclose = () => {
+    console.log('closed!!')
+  }
+
+  const connect = async () => {
+    connectButton.removeEventListener('click', connect)
+    const answer = new RTCSessionDescription(JSON.parse(clientDetails.value))
+    await conn.setRemoteDescription(answer)
+  }
+
+  connectButton.addEventListener('click', connect)
+  ;(async () => {
+    const offer = await conn.createOffer()
+    await conn.setLocalDescription(offer)
+    details.offer = offer
+    if (details.offer && details.ice) done()
+  })()
 }
 
-conn.onicecandidate = event =>
-  event.candidate && conn.addIceCandidate(event.candidate).catch(console.error)
+;(document.getElementById(
+  'create-details'
+) as HTMLButtonElement).addEventListener('click', createDetails)

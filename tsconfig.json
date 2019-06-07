@@ -20,7 +20,7 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "declaration": true,
-    "lib": ["es2018"]
+    "lib": ["es2018", "dom"]
   },
   "include": ["src"]
 }
